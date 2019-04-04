@@ -19,8 +19,7 @@ public class AppLogController {
 
     @Autowired
     private AppLogService appLogService;
-
-
+    
     @ResponseBody
     @RequestMapping(value = "/{id}/{type}", method = RequestMethod.GET)
     public Map<String, Object> listTaskLogByType(@PathVariable("id") String taskId, @PathVariable("type") int logType,
