@@ -1,0 +1,30 @@
+{
+    "sync_task_log": {
+        "properties": {
+            "logText": {
+                "type": "text",
+                "index": false
+            },
+            "logTime": {
+                "type": "long",
+                "store": true
+            },
+            "logType": {
+                "type": "integer",
+                "store": true
+            },
+            "taskId": {
+                "type": "keyword",
+                "store": true
+            },
+            "tenant": {
+                "type": "keyword",
+                "index": false
+            },
+            "user": {
+                "type": "keyword",
+                "index": false
+            }
+        }
+    }
+}

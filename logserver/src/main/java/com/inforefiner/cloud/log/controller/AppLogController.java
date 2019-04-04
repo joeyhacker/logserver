@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -38,7 +39,7 @@ public class AppLogController {
 
     @RequestMapping(value = "/save", method = RequestMethod.POST)
     public void saveSyncTaskLog(@RequestBody String json) {
-        SyncTaskLog syncTaskLog = JsonBuilder.getInstance().fromJson(json, SyncTaskLog.class);
+        HashMap syncTaskLog = JsonBuilder.getInstance().fromJson(json, HashMap.class);
         appLogService.saveSyncTaskLog(syncTaskLog);
     }
 }

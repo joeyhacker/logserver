@@ -2,7 +2,9 @@ package com.inforefiner.cloud.log.config;
 
 
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
+//import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,11 +36,12 @@ public class EsConfig {
     public String password;
 
     @Bean
-    public Client client() throws Exception {
+    public TransportClient client() throws Exception {
         Settings settings = Settings.builder()
                 .put("cluster.name", clusterName)
                 .build();
         return new PreBuiltTransportClient(settings).addTransportAddress(
                 new InetSocketTransportAddress(InetAddress.getByName(host), port));
+
     }
 }

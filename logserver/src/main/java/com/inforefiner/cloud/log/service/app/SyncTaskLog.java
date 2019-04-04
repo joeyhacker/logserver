@@ -1,30 +1,30 @@
 package com.inforefiner.cloud.log.service.app;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.elasticsearch.annotations.*;
+//import org.springframework.data.annotation.Id;
+//import org.springframework.data.elasticsearch.annotations.*;
 
-@Document(indexName = "sync_task_log", type = "sync_task_log")
+//@Document(indexName = "sync_task_log", type = "sync_task_log")
 public class SyncTaskLog {
 
-    @Id
+//    @Id
     private String id;
 
-    @Field(index = FieldIndex.no, type = FieldType.String, store = false)
+//    @Field(index = FieldIndex.no, type = FieldType.String, store = false)
     private String tenant;
 
-    @Field(index = FieldIndex.no, type = FieldType.String, store = false)
+//    @Field(index = FieldIndex.no, type = FieldType.String, store = false)
     private String user;
 
-    @Field(index = FieldIndex.not_analyzed, type = FieldType.String, store = true)
+//    @Field(index = FieldIndex.not_analyzed, type = FieldType.String, store = true)
     private String taskId;
 
-    @Field(index = FieldIndex.not_analyzed, type = FieldType.Integer, store = true)
+//    @Field(index = FieldIndex.not_analyzed, type = FieldType.Integer, store = true)
     private int logType;
 
-    @Field(index = FieldIndex.no, type = FieldType.String, store = false)
+//    @Field(index = FieldIndex.no, type = FieldType.String, store = false)
     private String logText;
 
-    @Field(index = FieldIndex.not_analyzed, type = FieldType.Long, store = true)
+//    @Field(index = FieldIndex.not_analyzed, type = FieldType.Long, store = true)
     private long logTime;
 
     public String getTaskId() {
