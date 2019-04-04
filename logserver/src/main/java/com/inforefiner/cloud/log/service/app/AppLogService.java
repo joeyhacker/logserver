@@ -26,9 +26,9 @@ public class AppLogService {
 
     private Logger logger = LoggerFactory.getLogger(com.inforefiner.cloud.log.service.app.AppLogService.class);
 
-    private static String syncTaskLogIndex = "sync_task_log";
+    private static String SyncTaskLogIndex = "sync_task_log";
 
-    private static String syncTaskLogIndexType = "sync_task_log";
+    private static String SyncTaskLogIndexType = "sync_task_log";
 
     @Value("${syncTaskLog.mapping.path:}")
     private String syncTaskLogMappingPath;
@@ -38,7 +38,7 @@ public class AppLogService {
 
     @PostConstruct
     public void init() {
-        IndicesExistsResponse response = client.admin().indices().prepareExists(syncTaskLogIndex).get();
+        IndicesExistsResponse response = client.admin().indices().prepareExists(SyncTaskLogIndex).get();
         if (!response.isExists()) {
             String mapping = null;
             if (StringUtils.isBlank(syncTaskLogMappingPath)) {
@@ -46,13 +46,13 @@ public class AppLogService {
             } else {
                 mapping = FileUtil.load(syncTaskLogMappingPath);
             }
-            client.admin().indices().prepareCreate(syncTaskLogIndex).addMapping(syncTaskLogIndexType, mapping).get();
+            client.admin().indices().prepareCreate(SyncTaskLogIndex).addMapping(SyncTaskLogIndexType, mapping).get();
         }
     }
 
     public void saveSyncTaskLog(Map syncTaskLog) {
         IndexResponse response =
-                client.prepareIndex(syncTaskLogIndex, syncTaskLogIndexType).setSource(syncTaskLog).get();
+                client.prepareIndex(SyncTaskLogIndex, SyncTaskLogIndexType).setSource(syncTaskLog).get();
         if (response.status().getStatus() != 201) {
             logger.error("index create error: " + response.status().toString());
         }
@@ -71,7 +71,7 @@ public class AppLogService {
             }
         }
         SearchResponse response =
-                client.prepareSearch(syncTaskLogIndex).setTypes(syncTaskLogIndexType).setQuery(boolQuery).setFrom(0).setSize(limit).addSort("logTime", desc ? SortOrder.DESC : SortOrder.ASC).get();
+                client.prepareSearch(SyncTaskLogIndex).setTypes(SyncTaskLogIndexType).setQuery(boolQuery).setFrom(0).setSize(limit).addSort("logTime", desc ? SortOrder.DESC : SortOrder.ASC).get();
         Map<String, Object> ret = new HashMap();
         List<String> logs = new ArrayList();
         SearchHit[] hits = response.getHits().getHits();
