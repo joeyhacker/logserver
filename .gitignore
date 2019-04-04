@@ -34,7 +34,7 @@ transaction-logs/
 ######################
 # Maven
 ######################
-/log/**
+/com.inforefiner.cloud.log.log/**
 /target/**
 
 ######################
@@ -73,7 +73,7 @@ Desktop.ini
 ######################
 # Logs
 ######################
-*.log
+*.com.inforefiner.cloud.log.log
 
 ######################
 # Others

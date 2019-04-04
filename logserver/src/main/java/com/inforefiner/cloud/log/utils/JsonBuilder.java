@@ -10,9 +10,9 @@ public class JsonBuilder {
 
 	private ObjectMapper mapper = new ObjectMapper();
 
-	private static JsonBuilder _instance = new JsonBuilder();
+	private static com.inforefiner.cloud.log.utils.JsonBuilder _instance = new com.inforefiner.cloud.log.utils.JsonBuilder();
 
-	public static JsonBuilder getInstance() {
+	public static com.inforefiner.cloud.log.utils.JsonBuilder getInstance() {
 		return _instance;
 	}
 
@@ -21,7 +21,7 @@ public class JsonBuilder {
 		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	}
 
-	public JsonBuilder pretty() {
+	public com.inforefiner.cloud.log.utils.JsonBuilder pretty() {
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
 		return this;
 	}

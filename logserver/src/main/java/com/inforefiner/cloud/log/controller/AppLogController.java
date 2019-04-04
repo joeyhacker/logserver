@@ -2,10 +2,6 @@ package com.inforefiner.cloud.log.controller;
 
 
 import com.inforefiner.cloud.log.service.app.AppLogService;
-import com.inforefiner.cloud.log.service.app.SyncTaskLog;
-import com.inforefiner.cloud.log.service.flow.ExecutionDetailedLogStatistics;
-import com.inforefiner.cloud.log.service.flow.ExecutionLogInfo;
-import com.inforefiner.cloud.log.service.flow.FlowExecutionLogService;
 import com.inforefiner.cloud.log.utils.JsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +15,7 @@ import java.util.Map;
 @RequestMapping("/sync_task_log")
 public class AppLogController {
 
-    private Logger logger = LoggerFactory.getLogger(AppLogController.class);
+    private Logger logger = LoggerFactory.getLogger(com.inforefiner.cloud.log.controller.AppLogController.class);
 
     @Autowired
     private AppLogService appLogService;

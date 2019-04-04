@@ -7,6 +7,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class LogServer {
 
     public static void main(String[] args) {
-        SpringApplication.run(LogServer.class, args);
+        SpringApplication.run(com.inforefiner.cloud.log.LogServer.class, args);
     }
 }

@@ -2,26 +2,20 @@ package com.inforefiner.cloud.log.service.app;
 
 
 import com.inforefiner.cloud.log.utils.FileUtil;
-import com.inforefiner.cloud.log.utils.JsonBuilder;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortOrder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.data.domain.PageRequest;
-//import org.springframework.data.domain.Pageable;
-//import org.springframework.data.domain.Sort;
-//import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
-//import org.springframework.data.elasticsearch.core.query.IndexQuery;
-//import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
-//import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -30,9 +24,14 @@ import java.util.*;
 @Service
 public class AppLogService {
 
-    private String syncTaskLogIndex = "sync_task_log";
-    private String syncTaskLogIndexType = "sync_task_log";
+    private Logger logger = LoggerFactory.getLogger(com.inforefiner.cloud.log.service.app.AppLogService.class);
 
+    private static String syncTaskLogIndex = "sync_task_log";
+
+    private static String syncTaskLogIndexType = "sync_task_log";
+
+    @Value("${syncTaskLog.mapping.path:}")
+    private String syncTaskLogMappingPath;
 
     @Autowired
     private TransportClient client;
@@ -41,13 +40,22 @@ public class AppLogService {
     public void init() {
         IndicesExistsResponse response = client.admin().indices().prepareExists(syncTaskLogIndex).get();
         if (!response.isExists()) {
-            String mapping = FileUtil.loadFromClassPath("/sync_task_log.mapping");
+            String mapping = null;
+            if (StringUtils.isBlank(syncTaskLogMappingPath)) {
+                mapping = FileUtil.loadFromClassPath("/sync_task_log.mapping");
+            } else {
+                mapping = FileUtil.load(syncTaskLogMappingPath);
+            }
             client.admin().indices().prepareCreate(syncTaskLogIndex).addMapping(syncTaskLogIndexType, mapping).get();
         }
     }
 
     public void saveSyncTaskLog(Map syncTaskLog) {
-        client.prepareIndex(syncTaskLogIndex, syncTaskLogIndexType).setSource(syncTaskLog);
+        IndexResponse response =
+                client.prepareIndex(syncTaskLogIndex, syncTaskLogIndexType).setSource(syncTaskLog).get();
+        if (response.status().getStatus() != 201) {
+            logger.error("index create error: " + response.status().toString());
+        }
     }
 
     public Map<String, Object> pagingSyncTaskLog(String taskId, int logType, long start, int limit, boolean desc) {
