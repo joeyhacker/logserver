@@ -85,5 +85,14 @@
                 </configuration>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>logserver.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
     </build>
 </project>
