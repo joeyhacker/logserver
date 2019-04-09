@@ -1,9 +1,9 @@
 package com.inforefiner.cloud.log.service.flow;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.inforefiner.cloud.log.utils.JsonBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,18 +36,17 @@ public class FlowExecutionLogService {
     private static final Logger logger = LoggerFactory.getLogger(FlowExecutionLogService.class);
 
     @Autowired
-    private TransportClient client;
+    private Client client;
 
-    @Value("${flow_execution_log.index}")
+    @Value("${woven.execution_log.index}")
     private String logIndex;
 
-    @Value("${flow_execution_log.type}")
+    @Value("${woven.execution_log.type}")
     private String logType;
 
-    @Value("${flow_execution_log.index-date-format:yyyy-ww}")
+    @Value("${woven.execution_log.index-date-format:yyyy-ww}")
     private String indexDateFormat;
 
-    private Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 
     //TODO 获取log4j2 index: metrics-yyyy-MM
     private String[] getLogsIndex() {
@@ -77,17 +77,19 @@ public class FlowExecutionLogService {
     public void findLogByTypeAndEId(String type, String id, List<ExecutionDetailedLog> list, int from, int size) {
         String[] logIndexs = this.getLogsIndex();
         logger.info("get logIndexs {}", logIndexs);
-        QueryBuilder query = QueryBuilders.boolQuery().must(termQuery("contextMap.eid.keyword",id)).must(termQuery("contextMap.etype.keyword", type));
-        SearchResponse response = client.prepareSearch(logIndexs).setTypes(logType).setQuery(query).addSort("@timestamp",SortOrder.ASC).setFrom(from).setSize(size).execute().actionGet();
+        QueryBuilder query = QueryBuilders.boolQuery().must(termQuery("contextMap.eid.keyword", id)).must(termQuery("contextMap.etype.keyword", type));
+        SearchResponse response = client.prepareSearch(logIndexs).setTypes(logType).setQuery(query).addSort("@timestamp", SortOrder.ASC).setFrom(from).setSize(size).execute().actionGet();
         SearchHit[] hits = response.getHits().getHits();
         List<ExecutionDetailedLog> detailedLogList = new ArrayList<>();
         for (SearchHit hit : hits) {
-            ExecutionDetailedLog e = gson.fromJson(gson.toJson(hit.getSource()), ExecutionDetailedLog.class);
+            Map obj = hit.getSource();
+            String json = JsonBuilder.getInstance().toJson(obj);
+            ExecutionDetailedLog e = JsonBuilder.getInstance().fromJson(json, ExecutionDetailedLog.class);
             detailedLogList.add(e);
         }
         list.addAll(detailedLogList);
         if (detailedLogList != null && detailedLogList.size() >= 10000) {
-            findLogByTypeAndEId(type, id, list, from+10000, size);
+            findLogByTypeAndEId(type, id, list, from + 10000, size);
         }
     }
 
@@ -103,11 +105,11 @@ public class FlowExecutionLogService {
         ExecutionDetailedLogStatistics executionDetailedLogStatistics = new ExecutionDetailedLogStatistics();
         executionDetailedLogStatistics.setList(list);
         String[] logIndexs = this.getLogsIndex();
-        QueryBuilder query = QueryBuilders.boolQuery().must(termQuery("contextMap.eid.keyword",id)).must(termQuery("contextMap.etype.keyword", type));
-        SearchResponse response = client.prepareSearch(logIndexs).setTypes(logType).setQuery(query).addAggregation(AggregationBuilders.terms("group_name").field("level.keyword")).addSort("@timestamp",SortOrder.ASC).execute().actionGet();
+        QueryBuilder query = QueryBuilders.boolQuery().must(termQuery("contextMap.eid.keyword", id)).must(termQuery("contextMap.etype.keyword", type));
+        SearchResponse response = client.prepareSearch(logIndexs).setTypes(logType).setQuery(query).addAggregation(AggregationBuilders.terms("group_name").field("level.keyword")).addSort("@timestamp", SortOrder.ASC).execute().actionGet();
         Aggregations aggregations = response.getAggregations();
         Map<String, Aggregation> aggregationMap = aggregations.asMap();
-        for (Map.Entry<String, Aggregation> map: aggregationMap.entrySet()) {
+        for (Map.Entry<String, Aggregation> map : aggregationMap.entrySet()) {
             StringTerms sts = (StringTerms) map.getValue();
             List<StringTerms.Bucket> buckets = sts.getBuckets();
             int sum = 0;
@@ -135,11 +137,11 @@ public class FlowExecutionLogService {
     public List<String> listTypeByEid(String executionId) {
         String[] logIndexs = this.getLogsIndex();
         logger.info("es index logIndexs : {}", logIndexs);
-        QueryBuilder query = QueryBuilders.boolQuery().must(termQuery("contextMap.eid.keyword",executionId));
-        SearchResponse response = client.prepareSearch(logIndexs).setTypes(logType).setQuery(query).addAggregation(AggregationBuilders.terms("etype_list").field("contextMap.etype.keyword")).setFrom(0).setSize(500).addSort("@timestamp",SortOrder.ASC).execute().actionGet();
+        QueryBuilder query = QueryBuilders.boolQuery().must(termQuery("contextMap.eid.keyword", executionId));
+        SearchResponse response = client.prepareSearch(logIndexs).setTypes(logType).setQuery(query).addAggregation(AggregationBuilders.terms("etype_list").field("contextMap.etype.keyword")).setFrom(0).setSize(500).addSort("@timestamp", SortOrder.ASC).execute().actionGet();
         Aggregations aggregations = response.getAggregations();
         Map<String, Aggregation> aggregationMap = aggregations.asMap();
-        for (Map.Entry<String, Aggregation> map: aggregationMap.entrySet()) {
+        for (Map.Entry<String, Aggregation> map : aggregationMap.entrySet()) {
             StringTerms sts = (StringTerms) map.getValue();
             List<StringTerms.Bucket> buckets = sts.getBuckets();
             if (buckets.size() > 0) {
@@ -161,13 +163,15 @@ public class FlowExecutionLogService {
             int count = 0;
             for (String etype : list) {
                 if (count >= offset) {
-                    QueryBuilder query = QueryBuilders.boolQuery().must(termQuery("contextMap.eid.keyword",executionId)).must(termQuery("contextMap.etype.keyword", etype)).must(termQuery("level.keyword", "ERROR"));
-                    SearchResponse response = client.prepareSearch(logIndexs).setTypes(logType).setQuery(query).setFrom(0).setSize(10000).addSort("@timestamp",SortOrder.ASC).execute().actionGet();
+                    QueryBuilder query = QueryBuilders.boolQuery().must(termQuery("contextMap.eid.keyword", executionId)).must(termQuery("contextMap.etype.keyword", etype)).must(termQuery("level.keyword", "ERROR"));
+                    SearchResponse response = client.prepareSearch(logIndexs).setTypes(logType).setQuery(query).setFrom(0).setSize(10000).addSort("@timestamp", SortOrder.ASC).execute().actionGet();
 
                     SearchHit[] hits = response.getHits().getHits();
                     List<ExecutionDetailedLog> detailedLogList = new ArrayList<>();
                     for (SearchHit hit : hits) {
-                        ExecutionDetailedLog e = gson.fromJson(gson.toJson(hit.getSource()), ExecutionDetailedLog.class);
+                        Map obj = hit.getSource();
+                        String json = JsonBuilder.getInstance().toJson(obj);
+                        ExecutionDetailedLog e = JsonBuilder.getInstance().fromJson(json, ExecutionDetailedLog.class);
                         detailedLogList.add(e);
                     }
                     if (detailedLogList != null && detailedLogList.size() > 0) {

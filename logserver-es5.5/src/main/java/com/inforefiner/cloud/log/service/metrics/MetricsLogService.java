@@ -3,6 +3,7 @@ package com.inforefiner.cloud.log.service.metrics;
 import com.inforefiner.cloud.log.service.flow.ExecutionDetailedLog;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -32,6 +33,9 @@ import static org.elasticsearch.index.query.QueryBuilders.*;
 @Service
 public class MetricsLogService {
 
+    @Autowired
+    private Client client;
+
     @Value("${woven.management.metrics.export.elastic.index:metrics}")
     private String metricsIndex;
 
@@ -41,11 +45,7 @@ public class MetricsLogService {
     @Value("${woven.management.metrics.export.elastic.time-zone:GMT+8}")
     public String timeZone;
 
-    @Autowired
-    private TransportClient client;
-
     private static final String GROUP_NAME = "groupBy";
-
 
     //TODO 获取metrics index: metrics-yyyy-MM
     private String[] getMetricsIndex() {
@@ -84,7 +84,7 @@ public class MetricsLogService {
 //        boolQueryBuilder.must(rangeQuery("@timestamp").gt(startDate).lt(endDate).includeLower(true).includeUpper(false));
         DateHistogramAggregationBuilder dhAgg =
                 AggregationBuilders.dateHistogram(GROUP_NAME).field("@timestamp").timeZone(DateTimeZone.forID("Asia/Shanghai"));
-        if ("day".equals(group) || StringUtils.isEmpty(group)) {
+        if ("day".equals(group) || org.apache.commons.lang3.StringUtils.isEmpty(group)) {
             dhAgg.dateHistogramInterval(DateHistogramInterval.DAY).format(dataFormat);
         } else if ("week".equals(group)) {
             dhAgg.dateHistogramInterval(DateHistogramInterval.WEEK).format(dataFormat);
@@ -98,9 +98,9 @@ public class MetricsLogService {
             throw new IllegalArgumentException("can't support group Type:" + group);
         }
         QueryBuilder query = QueryBuilders.boolQuery().must(termQuery("name", "http_server_requests")).must(rangeQuery("@timestamp").gt(startDate).lt(endDate).includeLower(true).includeUpper(false));
-        SearchResponse response = client.prepareSearch(indexs).setTypes("doc").setQuery(query).addAggregation(dhAgg).addSort("@timestamp",SortOrder.ASC).execute().actionGet();
+        SearchResponse response = client.prepareSearch(indexs).setTypes("doc").setQuery(query).addAggregation(dhAgg).addSort("@timestamp", SortOrder.ASC).execute().actionGet();
         Aggregations aggregations = response.getAggregations();
-        Histogram agg = (Histogram)  aggregations.asMap().get(GROUP_NAME);
+        Histogram agg = (Histogram) aggregations.asMap().get(GROUP_NAME);
         List<Map<String, Object>> list = new ArrayList<>();
         for (Histogram.Bucket entry : agg.getBuckets()) {
             Map<String, Object> map = new HashMap<>();
@@ -137,9 +137,9 @@ public class MetricsLogService {
             throw new IllegalArgumentException("can't support group Type:" + group);
         }
         QueryBuilder query = QueryBuilders.boolQuery().must(termQuery("name", "http_server_requests")).must(queryStringQuery("SUCCESS").field("outcome")).must(rangeQuery("@timestamp").gt(startDate).lt(endDate).includeLower(true).includeUpper(false));
-        SearchResponse response = client.prepareSearch(indexs).setTypes("doc").setQuery(query).addAggregation(dhAgg).addSort("@timestamp",SortOrder.ASC).execute().actionGet();
+        SearchResponse response = client.prepareSearch(indexs).setTypes("doc").setQuery(query).addAggregation(dhAgg).addSort("@timestamp", SortOrder.ASC).execute().actionGet();
         Aggregations aggregations = response.getAggregations();
-        Histogram agg = (Histogram)  aggregations.asMap().get(GROUP_NAME);
+        Histogram agg = (Histogram) aggregations.asMap().get(GROUP_NAME);
         List<Map<String, Object>> list = new ArrayList<>();
         for (Histogram.Bucket entry : agg.getBuckets()) {
             Map<String, Object> map = new HashMap<>();

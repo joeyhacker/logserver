@@ -1,10 +1,14 @@
 package com.inforefiner.cloud.log.config;
 
 
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
+import org.elasticsearch.xpack.client.PreBuiltXPackTransportClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,8 +18,9 @@ import java.net.InetAddress;
 //import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
 @Configuration
-//@EnableElasticsearchRepositories(basePackages = "com.merce.woven.app.repository")
 public class EsConfig {
+
+    private Logger logger = LoggerFactory.getLogger(EsConfig.class);
 
     @Value("${elasticsearch.host}")
     private String host;
@@ -23,7 +28,7 @@ public class EsConfig {
     @Value("${elasticsearch.port}")
     private int port;
 
-    @Value("${elasticsearch.clusterName}")
+    @Value("${elasticsearch.cluster.name}")
     private String clusterName;
 
     @Value("${elasticsearch.timeout:60s}")
@@ -36,11 +41,14 @@ public class EsConfig {
     public String password;
 
     @Bean
-    public TransportClient client() throws Exception {
+    public Client client() throws Exception {
+        logger.info("creating es client with cluster.name = {}, host = {}, port = {}", clusterName, host, port);
         Settings settings = Settings.builder()
                 .put("cluster.name", clusterName)
+                .put("client.transport.sniff", false)
+                .put("xpack.security.user", username + ":" + password)
                 .build();
-        return new PreBuiltTransportClient(settings).addTransportAddress(
+        return new PreBuiltXPackTransportClient(settings).addTransportAddress(
                 new InetSocketTransportAddress(InetAddress.getByName(host), port));
 
     }

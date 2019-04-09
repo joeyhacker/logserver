@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -26,33 +27,33 @@ public class AppLogService {
 
     private Logger logger = LoggerFactory.getLogger(com.inforefiner.cloud.log.service.app.AppLogService.class);
 
-    private static String SyncTaskLogIndex = "sync_task_log";
+    private static final String SYNC_TASK_LOG_INDEX = "sync_task_log";
 
-    private static String SyncTaskLogIndexType = "sync_task_log";
-
-    @Value("${syncTaskLog.mapping.path:}")
-    private String syncTaskLogMappingPath;
+    private static final String SYNC_TASK_LOG_INDEX_TYPE = "sync_task_log";
 
     @Autowired
-    private TransportClient client;
+    private Client client;
+
+    @Value("${sync_task_log.mapping.path:}")
+    private String syncTaskLogMappingPath;
 
     @PostConstruct
     public void init() {
-        IndicesExistsResponse response = client.admin().indices().prepareExists(SyncTaskLogIndex).get();
+        IndicesExistsResponse response = client.admin().indices().prepareExists(SYNC_TASK_LOG_INDEX).get();
         if (!response.isExists()) {
             String mapping = null;
             if (StringUtils.isBlank(syncTaskLogMappingPath)) {
-                mapping = FileUtil.loadFromClassPath("/sync_task_log.mapping");
+                mapping = FileUtil.loadFromClassPath("/mapping/sync_task_log_mapping.json");
             } else {
                 mapping = FileUtil.load(syncTaskLogMappingPath);
             }
-            client.admin().indices().prepareCreate(SyncTaskLogIndex).addMapping(SyncTaskLogIndexType, mapping).get();
+            client.admin().indices().prepareCreate(SYNC_TASK_LOG_INDEX).addMapping(SYNC_TASK_LOG_INDEX_TYPE, mapping).get();
         }
     }
 
     public void saveSyncTaskLog(Map syncTaskLog) {
         IndexResponse response =
-                client.prepareIndex(SyncTaskLogIndex, SyncTaskLogIndexType).setSource(syncTaskLog).get();
+                client.prepareIndex(SYNC_TASK_LOG_INDEX, SYNC_TASK_LOG_INDEX_TYPE).setSource(syncTaskLog).get();
         if (response.status().getStatus() != 201) {
             logger.error("index create error: " + response.status().toString());
         }
@@ -71,7 +72,7 @@ public class AppLogService {
             }
         }
         SearchResponse response =
-                client.prepareSearch(SyncTaskLogIndex).setTypes(SyncTaskLogIndexType).setQuery(boolQuery).setFrom(0).setSize(limit).addSort("logTime", desc ? SortOrder.DESC : SortOrder.ASC).get();
+                client.prepareSearch(SYNC_TASK_LOG_INDEX).setTypes(SYNC_TASK_LOG_INDEX_TYPE).setQuery(boolQuery).setFrom(0).setSize(limit).addSort("logTime", desc ? SortOrder.DESC : SortOrder.ASC).get();
         Map<String, Object> ret = new HashMap();
         List<String> logs = new ArrayList();
         SearchHit[] hits = response.getHits().getHits();
